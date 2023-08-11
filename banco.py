@@ -6,17 +6,28 @@ Enderecos = [{"idendereco": 0 ,"rua": "" , "numero": "" , "bairro": "" , "cidade
 
 
 def cadastrar_usuario(p_email,p_senha,p_cpf,p_nome,p_data_nascimento ,/,*,p_tabela ):
-    Usuario = {"idusuario": 0 ,"email": p_email ,"senha": p_senha , "cpf": p_cpf , "nome": p_nome , "data_nascimento" : p_data_nascimento}
-    Usuario["idusuario"] = p_tabela[-1]["idusuario"] + 1
-    return Usuario
+    return {"idusuario": p_tabela[-1]["idusuario"] + 1 ,"email": p_email ,"senha": p_senha , "cpf": p_cpf , "nome": p_nome , "data_nascimento" : p_data_nascimento}
+
 def cadastrar_endereco(p_rua,p_numero,p_bairro,p_cidade,p_estado,p_id_usuario ,/,*,p_tabela):
-    endereco = {"idendereco": 0 ,"rua": p_rua , "numero": p_numero , "bairro": p_bairro , "cidade": p_cidade , "estado" : p_estado  , "id_usuario" : p_id_usuario }
-    endereco["idendereco"] = p_tabela[-1]["idendereco"] + 1
-    return endereco
+    return {"idendereco": p_tabela[-1]["idendereco"] + 1 ,"rua": p_rua , "numero": p_numero , "bairro": p_bairro , "cidade": p_cidade , "estado" : p_estado  , "id_usuario" : p_id_usuario }
+
 def cadastrar_conta(p_idusuario ,/,*,p_tabela):
-     conta = {"numero": 0 , "agencia" : "0001" ,"saldo" : 0 , "limite_saque" : 500 , "extrato" : "","id_usuario" : p_idusuario }
-     conta["numero"] = p_tabela[-1]["numero"] + 1
-     return conta
+    return {"numero": p_tabela[-1]["numero"] + 1 , "agencia" : "0001" ,"saldo" : 0 , "limite_saque" : 500 , "extrato" : "","id_usuario" : p_idusuario }
+
+def filtrar_registros(p_coluna , p_valor ,*, tabela):
+    registros_encontrados = [];
+    total_registros = 0;
+    achou = False
+    for registro in tabela:
+        if(registro[p_coluna] == p_valor):
+            registros_encontrados.append(registro)
+            total_registros +=1
+
+    if(registros_encontrados == []):
+        achou = False
+    else:
+        achou = True
+    return registros_encontrados , total_registros , achou
 
 
 def interface_de_cadastro(*, p_Usuarios , p_Enderecos):
@@ -27,27 +38,22 @@ def interface_de_cadastro(*, p_Usuarios , p_Enderecos):
 
     nome = input("insira seu nome : ")
 
-    while (email_invalido == True) :
+    email_ja_cadastrado = True
+    while (email_ja_cadastrado == True) :
         email = input("insira um email : ")
-        
-        email_invalido = False
-        for usuario in p_Usuarios:
-            if(usuario["email"] == email):
-                email_invalido = True
-                print("email ja utilizado , porfavor tente novamente com outro email")
-                break
+        email_ja_cadastrado = filtrar_registros("email" , email , tabela =  p_Usuarios)[2]
+        if(email_ja_cadastrado == True):
+            "email ja cadastrado , porfavor tente novamente"
     
     senha = input("escolha uma senha : ")
 
-    while (cpf_invalido == True):
+    cpf_ja_cadastrado = True
+    while (cpf_ja_cadastrado == True):
         cpf = input("insira seu cpf : ")
-
-        cpf_invalido = False
-        for usuario in p_Usuarios:
-            if(usuario["cpf"] == cpf):
-                cpf_invalido = True
-                print("cpf ja utilizado , porfavor tente novamente com outo cpf")
-                break
+        cpf_ja_cadastrado = filtrar_registros("cpf" , cpf , tabela = p_Usuarios)[2]
+        if(cpf_ja_cadastrado == True):
+            "cpf ja cadastrado , porfavor tente novamente"
+        
 
     data_nascimento = input("insira sua data de nascimento no modelo dd/mm/aaaa : ")
 
@@ -66,12 +72,11 @@ def logar(p_Usuarios):
     id_usuario = 0
     email = input("porfavor informe o email de seu usuario : ")
     senha = input("porfavor informe a senha do seu usuario : ")
-    cpf = input("porfavor informe seu cpf : ")
 
     usuario_correto = False
 
     for usuario in p_Usuarios:
-        if (usuario["email"] == email and usuario["senha"] == senha and usuario["cpf"] == cpf ):
+        if (usuario["email"] == email and usuario["senha"] == senha ):
             usuario_correto = True
             id_usuario = usuario["idusuario"]
             break
@@ -81,26 +86,30 @@ def logar(p_Usuarios):
     else:
         print ("#login incorreto\n")
         return 0
+
 def selecionar_conta(p_id_usuario, tabela_Contas):
     usuario_contas = []
-    for conta in tabela_Contas:
-        if(conta["id_usuario"] == p_id_usuario):
-            usuario_contas.append(conta)
+
+    achou = False
+    usuario_contas, _ , achou = filtrar_registros("id_usuario",p_id_usuario, tabela = tabela_Contas)
     
-    i = 0
-    for conta in usuario_contas:
-        i += 1
-        print(f"{i} - numero: {conta['numero']} agencia: {conta['agencia']}  saldo: {conta['saldo']}")
-  
-    escolha = -1
-    while escolha > i or escolha <= 0 :
-        escolha = int(input(" escolha uma das contas\n"))
+    if(achou == False):
+        print("nenhuma conta cadastrada")
+        return 0
+    else:
+        i = 0
+        for conta in usuario_contas:
+            i += 1
+            print(f"{i} - numero: {conta['numero']} agencia: {conta['agencia']}  saldo: {conta['saldo']}")
+    
+        escolha = -1
+        while escolha > i or escolha <= 0 :
+            escolha = int(input(" escolha uma das contas\n"))
 
 
-    print(f" selecionado - > {escolha} - numero: {usuario_contas[escolha - 1]['numero']} agencia: {usuario_contas[escolha - 1]['agencia']}  saldo: {usuario_contas[escolha - 1]['saldo']}")
+        print(f" selecionado - > {escolha} - numero: {usuario_contas[escolha - 1]['numero']} agencia: {usuario_contas[escolha - 1]['agencia']}  saldo: {usuario_contas[escolha - 1]['saldo']}")
 
-    return usuario_contas[escolha - 1]["numero"]
-
+        return usuario_contas[escolha - 1]["numero"]
 
 
 def interface_cadastro_conta(p_Contas , p_Usuarios):
@@ -120,16 +129,6 @@ proprietario da conta : {p_Usuarios[conta['id_usuario']]['nome']} , cpf : {p_Usu
     else:
         print("informaçoes de usuario incorretas , porfavor tente novamente ")
 
-
-Usuarios.append( cadastrar_usuario("ruanlourencosilva.rj@gmail.com", "umasenha_ai", "19516113737" , "ruan" , "25/06/2001" , p_tabela= Usuarios) )
-Usuarios.append( cadastrar_usuario("tretakezica@gmail.com", "1234a_melhor_senha_do_mundo", "999999999" , "tretake" , "01/12/2011" , p_tabela= Usuarios) )
-
-
-
-
-
-#adicionar conta["extrato"] , conta["saldo"] e conta["limite_saque"]
-
 def saque(conta):
     saques_no_dia = 0
     valor = float(input("digite o valor que deseja sacar   "))
@@ -138,7 +137,7 @@ def saque(conta):
         print("falha ao fazer o saque , saldo insuficiente")
     elif( valor > conta["limite_saque"] ):
          print(f"erro ao fazer o saque, valor limite por saque = {conta['limite_saque']} ")
-    elif( saques_no_dia >= limite_saques_por_dia):  #resolver como sera feito os saques_no_dia em contas diferentes
+    elif( saques_no_dia >= 3):  #resolver como sera feito os saques_no_dia em contas diferentes
          print("falha ao fazer saque , limites de saques diarios execidido . maximo de 3 saques por dia")
     elif( valor <= 0 ):
                 print("valor invalido")
@@ -163,79 +162,106 @@ def deposito(conta):
 def mostrar_extrato(conta):
     print("\n\n##################extrato da conta##################\n\n" + conta["extrato"] + "\n\n##################extrato da conta##################\n\n")
 
-login_menu = """
-[l] - logar
-[c] - criar usuario
-[q] - sair
-
-"""
-
-usuario_menu = """
-[s] - selecionar uma conta corrente
-[c] - criar conta corrente
-[q] - deslogar
-
-"""
-conta_menu = """ 
-[s] - saque
-[d] - deposito
-[e] - estrato
-[c] - criar conta corrente
-[q] - deslogar
-
-"""
 
 
-limite_saques_por_dia = 3
-saques_no_dia = 0
+def menu_opcoes( opcoes):
+    login_menu = """
+    [l] - logar
+    [c] - criar usuario
+    [q] - sair
 
-id_usuario_em_uso = 0
-id_conta_em_uso = 0
+    """
+    usuario_menu = """
+    [s] - selecionar uma conta corrente
+    [c] - criar conta corrente
+    [q] - deslogar
 
-rodando = True
+    """
+    conta_menu = """ 
+    [s] - saque
+    [d] - deposito
+    [e] - estrato
+    [c] - criar conta corrente
+    [q] - deslogar
 
-while rodando:
+    """
 
-    while id_usuario_em_uso == 0:
+    escolha = ""
+
+    if(opcoes == "login"):
         escolha = input(login_menu)
-        if(escolha == 'l'):
-            id_usuario_em_uso = logar(Usuarios)
-        elif( escolha == 'c'):
-            interface_de_cadastro(p_Usuarios = Usuarios ,p_Enderecos= Enderecos)
-        elif ( escolha == 'q'):
-            rodando = False
-
-    if rodando == False:
-        break
-
-    #programar funcao de escolha de conta 
-
-    while id_conta_em_uso == 0:
+    elif(opcoes == "usuario"):
         escolha = input(usuario_menu)
-
-        if (escolha == 's'):
-            id_conta_em_uso = selecionar_conta(id_usuario_em_uso,Contas)
-        elif ( escolha == 'c') :
-            interface_cadastro_conta(Contas,Usuarios)
-
-
-    while id_usuario_em_uso != 0 :
-        print( f"conta em uso: email {Usuarios[id_usuario_em_uso]['email']} , nome : {Usuarios[id_usuario_em_uso]['nome']}")
-    #nenhuma conta selecionada        print( "\n\n\ntotal na conta :" , Usuarios[id_conta_em_uso]["saldo"])
+    elif(opcoes == "conta"):
         escolha = input(conta_menu)
 
-        if (escolha == 's') :
-            saque(Contas[id_conta_em_uso])
+    return escolha
 
-        elif (escolha == 'd') :
-            deposito(Contas[id_conta_em_uso])
 
-        elif( escolha == 'e') :
-            mostrar_extrato(Contas[id_conta_em_uso])
-        elif ( escolha == 'q') :
-            id_usuario_em_uso = 0
-            id_conta_em_uso = 0
-        elif ( escolha == 'c') :
-            interface_cadastro_conta(Contas,Usuarios)
-        else :
-            print("comando invalido , favor tentar novamente")
+
+
+    
+
+def main():#{
+
+    Usuarios.append( cadastrar_usuario("ruanlourencosilva.rj@gmail.com", "umasenha_ai", "19516113737" , "ruan" , "25/06/2001" , p_tabela= Usuarios) )
+    Usuarios.append( cadastrar_usuario("tretakezica@gmail.com", "1234a_melhor_senha_do_mundo", "999999999" , "tretake" , "01/12/2011" , p_tabela= Usuarios) )
+    Usuarios.append( cadastrar_usuario("r@gmail.com", "123", "444444" , "naur" , "25/06/2999" , p_tabela= Usuarios) )
+
+    limite_saques_por_dia = 3
+    saques_no_dia = 0
+
+    id_usuario_em_uso = 0
+    id_conta_em_uso = 0
+
+    rodando = True
+
+    menu = "login"
+    while rodando:
+        
+        escolha = ""
+        escolha = menu_opcoes(menu)
+        
+        if(menu == "login"):
+            if(escolha == 'l'):
+                id_usuario_em_uso = logar(Usuarios)
+            elif( escolha == 'c'):
+                interface_de_cadastro(p_Usuarios = Usuarios ,p_Enderecos= Enderecos)
+            elif ( escolha == 'q'):
+                rodando = False
+
+        elif(menu == "usuario"):
+            if (escolha == 's'):
+                id_conta_em_uso = selecionar_conta(id_usuario_em_uso,Contas)
+            elif ( escolha == 'c') :
+                interface_cadastro_conta(Contas,Usuarios)
+
+        elif(menu == "conta"):
+            if (escolha == 's') :
+                saque(Contas[id_conta_em_uso])
+            elif (escolha == 'd') :
+                deposito(Contas[id_conta_em_uso])
+            elif( escolha == 'e') :
+                mostrar_extrato(Contas[id_conta_em_uso])
+            elif ( escolha == 'q') :
+                id_usuario_em_uso = 0
+                id_conta_em_uso = 0
+            elif ( escolha == 'c') :
+                interface_cadastro_conta(Contas,Usuarios)
+            else :
+                print("comando invalido , favor tentar novamente")
+        
+        
+        if(id_usuario_em_uso == 0):
+            menu = "login"
+        elif(id_conta_em_uso == 0):
+            print( f"usuario em uso: email {Usuarios[id_usuario_em_uso]['email']} , nome : {Usuarios[id_usuario_em_uso]['nome']}")
+            menu = "usuario"
+        else:
+            menu = "conta"
+            print( f"usuario em uso: email {Usuarios[id_usuario_em_uso]['email']} , nome : {Usuarios[id_usuario_em_uso]['nome']}")
+            print( f"total na conta : {Contas[id_conta_em_uso]['saldo']}" )
+#}
+
+
+main()
